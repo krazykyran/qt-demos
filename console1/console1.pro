@@ -3,7 +3,7 @@ QT -= gui
 
 CONFIG += c++11
 
-TARGET = addinsight-test
+TARGET = console1
 CONFIG += console
 CONFIG -= app_bundle
 
