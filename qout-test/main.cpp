@@ -1,18 +1,17 @@
 #include <QCoreApplication>
 #include <QTextStream>
 
-#include "mainclass.h"
-
-QTextStream qin(stdin);
+int verbose = 1;
 QTextStream qout(stdout);
-QTextStream qerr(stderr);
+#define VERBOSE(x)  if (verbose >= (x)) qout
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    MainClass m(&a);
-    m.init();
+    QString msg("hello world");
 
-    return a.exec();
+    VERBOSE(2) << msg << endl;
+
+//    return a.exec();
 }
