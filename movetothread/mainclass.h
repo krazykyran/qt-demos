@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include <sys/socket.h>
 
+#include "worker.h"
+
 class MainClass : public QObject
 {
     Q_OBJECT
@@ -20,9 +22,11 @@ public:
     ~MainClass();
 
     void init();
+    void startWorker();
 public slots:
     void run();
     void timerEvent(QTimerEvent *event);
+    void handleSpit(QString msg);
 
 public:
     static void INTsignalHandler(int unused);
@@ -55,8 +59,10 @@ private:
     QSocketNotifier *snTERM;
 
     int m_timerId;
-    bool m_abort;
+    bool m_shutdown;
     int m_exitCode;
+    Worker *m_worker;
+    QThread *m_workerThread;
 };
 
 #endif // MAINCLASS_H

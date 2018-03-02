@@ -38,7 +38,7 @@ MainClass::MainClass(QObject *parent) : QObject(parent)
     m_name = "MainClass";
     qout << m_name << ": constructor ..." << endl;
     m_app = QCoreApplication::instance();
-    m_abort = false;
+    m_shutdown = false;
     m_exitCode = 0;
 }
 
@@ -87,6 +87,25 @@ void MainClass::init()
 //    QTimer::singleShot(100, this, SLOT(run()));
     // start QObject timer.
     m_timerId = startTimer(100);
+
+    startWorker();
+}
+
+void MainClass::startWorker()
+{
+    m_workerThread = new QThread(m_app);
+    m_worker = new Worker();
+    m_worker->moveToThread(m_workerThread);
+    connect(m_workerThread, SIGNAL(started()), m_worker, SLOT(process()));
+    connect(m_worker, SIGNAL(finished()), m_workerThread, SLOT(quit()));
+    connect(this, SIGNAL(finished(int)), m_worker, SLOT(handleShutdown()));
+    connect(m_workerThread, SIGNAL(finished()), m_worker, SLOT(deleteLater()));
+//    connect(m_worker, SIGNAL(finished()), m_worker, SLOT(deleteLater()));
+//    connect(m_workerThread, SIGNAL(finished()), m_workerThread, SLOT(deleteLater()));
+    connect(m_worker, SIGNAL(spit(QString)), this, SLOT(handleSpit(QString)));
+
+    m_workerThread->start();
+
 }
 
 void MainClass::run()
@@ -94,7 +113,7 @@ void MainClass::run()
     qout << m_name << ": running, doing something exciting ..." << endl;
 
     qout << m_name << ": running, and looping ..." << endl;
-    while (!m_abort) {
+    while (!m_shutdown) {
         QThread::msleep(10);
         m_app->processEvents();
     }
@@ -103,19 +122,36 @@ void MainClass::run()
     emit finished(EXIT_SUCCESS);
 }
 
+// timerEvent overrides QObject QTimer handler,
+// which was started by startTimer() in the init() member function
+// use this override function to do loop tasks
 void MainClass::timerEvent(QTimerEvent *event)
 {
     Q_UNUSED(event);
     static int i = 0;
-    if (i == 100) {
-        killTimer(m_timerId);
-        emit finished(EXIT_SUCCESS);
+    static int count = 0;
+
+    if (count == 10) {
+        m_shutdown = true;
+        m_exitCode = EXIT_SUCCESS;
     }
-    if (m_abort) {
+
+    if (m_shutdown) {
         killTimer(m_timerId);
         emit finished(m_exitCode);
+        return;
     }
-    i++;
+
+    // work goes here ...
+    if (++i == 10) {
+        qout << m_name << ": timer event:" << count++ << endl;
+        i = 0;
+    }
+}
+
+void MainClass::handleSpit(QString msg)
+{
+    qout << m_name << ": " << msg << endl;
 }
 
 void MainClass::INTsignalHandler(int unused)
@@ -164,15 +200,15 @@ void MainClass::handleSIGTERM()
 
 void MainClass::abortApp()
 {
-//    qout << m_name << ": aborting app ..." << endl;
+    qout << m_name << ": aborting app ..." << endl;
     // MainClass::run() or MainClass::timerEvent() will check m_abort,
     // and emit a finished() signal, which is handled by finishApp() slot.
-    m_abort = true;
+    m_shutdown = true;
 }
 
 void MainClass::handleFinished(int e)
 {
-//    qout << m_name << ": shutting down app ... " << endl;
+    qout << m_name << ": shutting down app ... " << endl;
 
     // app->exit() will stop the event handler and prevent
     // signals from tasks to get through (undesired), so use a singleshot timer
@@ -183,11 +219,11 @@ void MainClass::handleFinished(int e)
 
 void MainClass::exitApp()
 {
-//    qout << m_name << ": quitting app ..." << endl;
+    qout << m_name << ": quitting app ..." << endl;
     m_app->exit(m_exitCode);
 }
 
 void MainClass::handleAboutToQuit()
 {
-//    qout << m_name << ": about to quit ..." << endl;
+    qout << m_name << ": about to quit ..." << endl;
 }

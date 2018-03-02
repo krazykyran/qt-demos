@@ -55,7 +55,7 @@ private:
     QSocketNotifier *snTERM;
 
     int m_timerId;
-    bool m_abort;
+    bool m_shutdown;
     int m_exitCode;
 };
 
