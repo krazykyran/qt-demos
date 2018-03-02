@@ -38,6 +38,8 @@ signals:
 
     // signal to finish, this is connected to Application Quit
     void finished(int e);
+    void shutdownWorkers();
+
 
 public slots:
     void handleSIGINT();
@@ -45,6 +47,8 @@ public slots:
 
     void abortApp();
     void handleFinished(int e = 0);
+    void handleWorkerFinished();
+    void waitForThread(QThread *thread , int timeout);
     void exitApp();
     void handleAboutToQuit();
 
@@ -55,14 +59,14 @@ private:
     static int sigINTfds[2];
     static int sigTERMfds[2];
 
-    QSocketNotifier *snINT;
-    QSocketNotifier *snTERM;
+    QSocketNotifier *snINT = nullptr;
+    QSocketNotifier *snTERM = nullptr;
 
     int m_timerId;
     bool m_shutdown;
     int m_exitCode;
-    Worker *m_worker;
-    QThread *m_workerThread;
+    Worker *m_worker = nullptr;
+    QThread *m_workerThread = nullptr;
 };
 
 #endif // MAINCLASS_H

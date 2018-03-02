@@ -8,7 +8,7 @@ Worker::Worker(QObject *parent) : QObject(parent)
     qout << m_name << ": constructor ..." << endl;
     m_shutdown = false;
 
-//    connect(this, SIGNAL(spit(QString&)), this, SLOT(handleSpit(QString&)));
+    connect(this, SIGNAL(spit(QString)), this, SLOT(handleSpit(QString)));
 }
 
 Worker::~Worker()
@@ -19,23 +19,19 @@ Worker::~Worker()
 void Worker::process()
 {
     qout << m_name << ": processing ..." << endl;
-    int i = 0;
+
     int count = 0;
-    QElapsedTimer timer;
-    timer.start();
+
     while(!m_shutdown) {
-        if (timer.elapsed() > 100) {
-            QString msg = QString("process timer = %1ms")
-                    .arg(timer.elapsed());
-            emit spit(msg);
-            timer.restart();
-        }
 
-//        qout << m_name << ": process timer elapsed " << timer.elapsed() << "ms" << endl;
+        QString msg = QString("process count = %1").arg(count);
+        emit spit(msg);
+        count++;
 
-        QThread::msleep(10);
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        QThread::msleep(500);
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);    // this is required to receive shutdown signal
     }
+
     qout << m_name << ": processing ending ..." << endl;
     emit finished();
 }
@@ -47,5 +43,6 @@ void Worker::handleSpit(QString msg)
 
 void Worker::handleShutdown()
 {
+    qout << m_name << ": handle shutdown ..." << endl;
     m_shutdown = true;
 }

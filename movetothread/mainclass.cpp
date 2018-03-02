@@ -44,8 +44,11 @@ MainClass::MainClass(QObject *parent) : QObject(parent)
 
 MainClass::~MainClass()
 {
-    delete snINT;
-    delete snTERM;
+    qout << m_name << ": destructor ..." << endl;
+    if (snINT) delete snINT;
+    if (snTERM) delete snTERM;
+    if (m_worker) delete m_worker;
+    if (m_workerThread) delete m_workerThread;
 }
 
 void MainClass::init()
@@ -97,11 +100,11 @@ void MainClass::startWorker()
     m_worker = new Worker();
     m_worker->moveToThread(m_workerThread);
     connect(m_workerThread, SIGNAL(started()), m_worker, SLOT(process()));
-    connect(m_worker, SIGNAL(finished()), m_workerThread, SLOT(quit()));
-    connect(this, SIGNAL(finished(int)), m_worker, SLOT(handleShutdown()));
-    connect(m_workerThread, SIGNAL(finished()), m_worker, SLOT(deleteLater()));
-//    connect(m_worker, SIGNAL(finished()), m_worker, SLOT(deleteLater()));
-//    connect(m_workerThread, SIGNAL(finished()), m_workerThread, SLOT(deleteLater()));
+
+    connect(this, SIGNAL(shutdownWorkers()), m_worker, SLOT(handleShutdown()));
+    connect(m_worker, SIGNAL(finished()), this, SLOT(handleWorkerFinished()));
+
+//    connect(m_worker, SIGNAL(finished()), m_workerThread, SLOT(quit()));
     connect(m_worker, SIGNAL(spit(QString)), this, SLOT(handleSpit(QString)));
 
     m_workerThread->start();
@@ -144,7 +147,7 @@ void MainClass::timerEvent(QTimerEvent *event)
 
     // work goes here ...
     if (++i == 10) {
-        qout << m_name << ": timer event:" << count++ << endl;
+        qout << m_name << ": timer event = " << count++ << endl;
         i = 0;
     }
 }
@@ -209,16 +212,51 @@ void MainClass::abortApp()
 void MainClass::handleFinished(int e)
 {
     qout << m_name << ": shutting down app ... " << endl;
+    m_exitCode = e;
+
+    emit shutdownWorkers();
 
     // app->exit() will stop the event handler and prevent
     // signals from tasks to get through (undesired), so use a singleshot timer
     // to signal an App Quit after 100ms.
-    m_exitCode = e;
+
     QTimer::singleShot(100, this, SLOT(exitApp()));
+}
+
+
+void MainClass::handleWorkerFinished()
+{
+    qout << m_name << ": worker process finished ..." << endl;
+    if (m_shutdown)
+        m_workerThread->quit();
+}
+
+void MainClass::waitForThread(QThread *thread, int timeout)
+{
+    // test if thread object is created
+    if (!thread)
+        return;
+
+    // implement timeout loop with repeating ::processEvents() to forward signals to slots
+    // to give thread a chance to shutdown. thread.wait() blocks the eventloop.
+    QElapsedTimer timer;
+    timer.start();
+    while (thread->isRunning()) {
+        if (timer.hasExpired(timeout)) {
+            qout << m_name << ": sorry, have to force quit this thread ..." << endl;
+            m_workerThread->terminate();
+            break;
+        }
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        QThread::msleep(100);
+    }
 }
 
 void MainClass::exitApp()
 {
+
+    waitForThread(m_workerThread, 5000);
+
     qout << m_name << ": quitting app ..." << endl;
     m_app->exit(m_exitCode);
 }
