@@ -244,7 +244,7 @@ void MainClass::waitForThread(QThread *thread, int timeout)
     while (thread->isRunning()) {
         if (timer.hasExpired(timeout)) {
             qout << m_name << ": sorry, have to force quit this thread ..." << endl;
-            m_workerThread->terminate();
+            thread->terminate();
             break;
         }
         QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
