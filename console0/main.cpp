@@ -1,23 +1,18 @@
 #include <QCoreApplication>
-#include <QTimer>
+#include <QTextStream>
+
 #include "mainclass.h"
 
+QTextStream qin(stdin);
+QTextStream qout(stdout);
+QTextStream qerr(stderr);
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    /* create the main class */
-    MainClass myMain;
-
-    /* connect up the signals */
-    QObject::connect(&myMain, SIGNAL(finished()), &a, SLOT(quit()));
-    QObject::connect(&a, SIGNAL(aboutToQuit()), &myMain, SLOT(aboutToQuitApp()));
-
-    /* This code will start the messaging engine in Qt and in
-     * 10ms it will start the execution in the MainClass.run routine
-     */
-    QTimer::singleShot(10, &myMain, SLOT(run()));
+    MainClass m(&a);
+    m.init();
 
     return a.exec();
 }

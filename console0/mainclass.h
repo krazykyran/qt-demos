@@ -3,31 +3,45 @@
 
 #include <QCoreApplication>
 #include <QObject>
+#include <QThread>
+
+#include <QTextStream>
+#include <QTimer>
+
+#include <signal.h>
+#include <unistd.h>
+#include <sys/socket.h>
 
 class MainClass : public QObject
 {
     Q_OBJECT
-private:
-    QCoreApplication *app;
-
 public:
     explicit MainClass(QObject *parent = 0);
-    /* call this to quit the application */
+    ~MainClass();
+
+    void init();
     void quit();
+public slots:
+    void timerEvent(QTimerEvent *event);
 
 signals:
-    /* signal to finish, this is connected to Application Quit */
-    void finished();
+    // signal to finish, this is connected to Application Quit
+    void finished(int e);
 
+    // slot that get signal when that application is about to quit
 public slots:
-    /* This is the slot that gets called from main to start everything
-     * but, everything is set up in the Constructor.
-     */
-    void run();
+    void abortApp();
+    void handleFinished(int e = 0);
+    void exitApp();
+    void handleAboutToQuit();
 
-    /* slot that get signal when that application is about to quit */
-    void aboutToQuitApp();
+private:
+    const char *m_name;
+    QCoreApplication *m_app;
 
+    int m_timerId;
+    bool m_shutdown;
+    int m_exitCode;
 };
 
 #endif // MAINCLASS_H

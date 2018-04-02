@@ -44,6 +44,7 @@ MainClass::MainClass(QObject *parent) : QObject(parent)
 
 MainClass::~MainClass()
 {
+    qout << m_name << ": destructor ..." << endl;
     delete snINT;
     delete snTERM;
 }
@@ -87,6 +88,8 @@ void MainClass::init()
 //    QTimer::singleShot(100, this, SLOT(run()));
     // start QObject timer.
     m_timerId = startTimer(100);
+
+    QTimer::singleShot(10500, this, SLOT(abortApp()));
 }
 
 void MainClass::run()
@@ -112,22 +115,27 @@ void MainClass::timerEvent(QTimerEvent *event)
     static int i = 0;
     static int count = 0;
 
-    if (count == 10) {
-        m_shutdown = true;
-        m_exitCode = EXIT_SUCCESS;
-    }
-
     if (m_shutdown) {
+        qout << m_name << ": timerEvent is exiting ..." << endl;
         killTimer(m_timerId);
-        emit finished(m_exitCode);
+        emit finished(EXIT_SUCCESS);
         return;
     }
 
-    // work goes here ...
-    if (++i == 10) {
-        qout << m_name << ": timer event:" << count++ << endl;
-        i = 0;
+    if (count == 0) {
+        qout << m_name << ": timerEvent is initializing " << i++ << " ..." << endl;
     }
+
+    if (count == 1) {
+        ;
+    }
+
+    if (count == 10) {
+        qout << m_name << ": timerEvent is executing " << i++ << " ..." << endl;
+        count = 0;
+    }
+
+    count++;
 }
 
 void MainClass::INTsignalHandler(int unused)
