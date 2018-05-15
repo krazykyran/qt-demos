@@ -18,13 +18,17 @@ int main(int argc, char *argv[])
     QMap<QByteArray, int> map;
 //    QSet<QByteArray> set;
 
-    map.insert("00:00:00:00:00:01",1);
-    map.insert("00:00:00:00:00:02",1);
-    map.insert("00:00:00:00:00:03",1);
+    map.insert("00:00:00:00:00:01",-63);
+    map.insert("00:00:00:00:00:02",-51);
+    map.insert("00:00:00:00:00:03",-28);
+    map.insert("00:00:00:00:00:04",-50);
 
-//    set << "00:00:00:00:00:04";
+    map.insert("00:00:00:00:00:0a",-51);
+    map.insert("00:00:00:00:00:0A",-52);
+    map.insert("00:00:00:00:00:ee",-53);
+    map.insert("00:00:00:00:00:EE",-54);
 
-//    set << "00:00:00:00:00:01";
+    map.insert("00:00:00:00:00:01",-60);
 
 //    foreach(QByteArray mac, set) {
 //        qout << mac << endl;
