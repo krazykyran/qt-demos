@@ -1,17 +1,15 @@
-#include <QCoreApplication>
+#include "dialog.h"
+#include <QApplication>
 #include <QTextStream>
-
-#include "myserver.h"
 
 QTextStream qout(stdout);
 QTextStream qerr(stderr);
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
-
-    MyServer server(&a);
-    server.init();
+    QApplication a(argc, argv);
+    Dialog w;
+    w.show();
 
     return a.exec();
 }
